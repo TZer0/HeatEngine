@@ -1,12 +1,13 @@
 from numpy import fromfunction, zeros
 
 class Engine:
-	def __init__(self, x, y, temp, k=0.05):
+	def __init__(self, x, y, temp, k=0.05, spacing = 0.1):
 		self.calcspace = fromfunction(temp, (x,y), dtype=float)
 		self.objects = zeros((x,y))
 		self.nextObj = 1
 		self.startTemp = temp(0,0)
 		self.kVals = [k]
+		self.spacing = spacing
 
 	def insertObject(self, x, y, xsize, ysize, temp, k = 0.3):
 		for i in xrange(x, x+xsize):
@@ -38,7 +39,10 @@ class Engine:
 				self.calcspace[xd+i][yd+j] = dupCalc[i][j]
 
 	def iterate(self, dt):
-		pass
+		ys = len(self.calcspace[0])
+		for x in xrange(len(self.calcspace[0])):
+			for y in xrange(ys):
+				print x,y
 
 if __name__ == '__main__':
 	eng = Engine(100,100,lambda i, j: i*0+3)
