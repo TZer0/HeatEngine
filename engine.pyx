@@ -11,14 +11,14 @@ class Engine:
 		self.spacing = spacing
 		
 
-	def insertObject(self, x, y, z, xsize, ysize, zsize, temp, k = 0.3):
+	def insertObject(self, x, y, z, xsize, ysize, zsize, temp, kv = 0.3):
 		for i in xrange(x, x+xsize):
 			for j in xrange(y, y+ysize):
 				for k in xrange(z, z+zsize):
 					self.calcspace[i][j][k] = temp(i, j, k)
 					self.objects[i][j][k] = self.nextObj
 		self.nextObj += 1
-		self.kVals.append([k, x, y, z, xsize, ysize, zsize])
+		self.kVals.append([kv, x, y, z, xsize, ysize, zsize])
 		return len(self.kVals) - 1
 
 	def moveObject(self, obj, xd, yd, zd, trace = False):
@@ -68,7 +68,7 @@ class Engine:
 					+ calcSp[x][y][z+1]*kV[obj[x][y][z+1]][0]\
 					+ calcSp[x][y][z-1]*kV[obj[x][y][z-1]][0]
 					prev[x][y][z] = calcSp[x][y][z] + pre * calc
-					print "n %f %f" % (calcSp[x][y][z], calc*pre)
+					print "n %f %f %f" % (calcSp[x][y][z], calc*pre, kV[obj[x][y][z]][0])
 		tmp = self.calcspace
 		self.calcspace = self.prev
 		self.prev = tmp
@@ -77,6 +77,7 @@ class Engine:
 
 if __name__ == '__main__':
 	eng = Engine(5,5,5,lambda i, j, k: i*0+3, 0.05, 0.5)
-	eng.insertObject(1, 1, 1, 3, 3, 3, lambda i, j, k: i*0+10)
+	eng.insertObject(1, 1, 1, 3, 3, 3, lambda i, j, k: i*0+3, 0.06)
 	#eng.moveObject(1,5,5,5, True)
-	eng.iterate(0.0001)
+	for i in xrange(412):
+		eng.iterate(0.0001)
