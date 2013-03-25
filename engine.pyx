@@ -54,6 +54,7 @@ class Engine:
 		kV = self.kVals
 		prev = self.prev
 		calcSp = self.calcspace
+		print calcSp
 
 		print pre
 		print 0.51*dt*dt
@@ -77,7 +78,7 @@ class Engine:
 
 if __name__ == '__main__':
 	eng = Engine(5,5,5,lambda i, j, k: i*0+3, 0.05, 0.5)
-	eng.insertObject(1, 1, 1, 3, 3, 3, lambda i, j, k: i*0+3, 0.06)
+	eng.insertObject(1, 1, 1, 3, 3, 3, lambda i, j, k: i*0+3, 0.05)
 	#eng.moveObject(1,5,5,5, True)
 	for i in xrange(412):
 		eng.iterate(0.0001)
