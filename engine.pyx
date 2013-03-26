@@ -1,4 +1,8 @@
 from numpy import fromfunction, zeros
+import pygame
+from pygame.locals import *
+from OpenGL.GL import *
+from OpenGL.GLU import *
 
 class Engine:
 	def __init__(self, x, y, z, temp, k=0.05, spacing = 0.1):
@@ -74,11 +78,78 @@ class Engine:
 		self.calcspace = self.prev
 		self.prev = tmp
 		print self.calcspace
-					
+	def initRender(self, size):
+		pygame.init()
+		screen = pygame.display.set_mode(size, HWSURFACE | OPENGL | DOUBLEBUF)
+		glViewport(0, 0, size[0], size[1])
+		glShadeModel(GL_SMOOTH)
+		glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
+		viewport = glGetIntegerv( GL_VIEWPORT )
+		glMatrixMode(GL_PROJECTION)
+		glLoadIdentity()
+		gluPerspective(60.0, float(viewport[2])/viewport[3], 0.1, 1000)
+		glMatrixMode(GL_MODELVIEW)
+		glLoadIdentity()
+		glClearColor( 0.5, 0.5, 0.5, 1 )
+	def render(self):
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
+		glLoadIdentity( )
+
+		# Position camera to look at the world origin.
+		gluLookAt( 1, 1, 1, 0, 0, 0, 0, 0, 1 )
+
+		# Draw x-axis line.
+		glColor3f( 1, 0, 0 )
+
+		glBegin( GL_LINES )
+		glVertex3f( 0, 0, 0 )
+		glVertex3f( 1, 0, 0 )
+		glEnd( )
+
+		# Draw y-axis line.
+		glColor3f( 0, 1, 0 )
+
+		glBegin( GL_LINES )
+		glVertex3f( 0, 0, 0 )
+		glVertex3f( 0, 1, 0 )
+		glEnd( )
+
+		# Draw z-axis line.
+		glColor3f( 0, 0, 1 )
+
+		glBegin( GL_LINES )
+		glVertex3f( 0, 0, 0 )
+		glVertex3f( 0, 0, 1 )
+		glEnd( )
+		lx = len(self.objects)
+		ly = len(self.objects[0])
+		lz = len(self.objects[0][0])
+		ry = xrange(len(self.objects[0]))
+		rz = xrange(len(self.objects[0][0]))
+		sx = 1./lx
+		sy = 1./ly
+		sz = 1./lz
+		for x in xrange(lx):
+			for y in ry:
+				for z in rz:
+					if (self.objects[x][y][z] == 0):
+						continue
+					glColor(self.calcspace[x][y][z]/10, 0, 0)
+					glBegin(GL_QUADS)
+					glVertex3f(x*sx,y*sy,z*sz);
+					glVertex3f((x+1)*sx,y*sy,z*sz);
+					glVertex3f((x+1)*sx,(y+1)*sy,z*sz);
+					glVertex3f(x*sx,(y+1)*sy,z*sz);
+					glEnd()
+
+		pygame.display.flip( )		
 
 if __name__ == '__main__':
-	eng = Engine(5,5,5,lambda i, j, k: i*0+3, 0.05, 0.5)
-	eng.insertObject(1, 1, 1, 3, 3, 3, lambda i, j, k: i*0+3, 0.05)
+	eng = Engine(10,10,10,lambda i, j, k: i*0+3, 0.05, 0.5)
+	eng.insertObject(3, 3, 3, 3, 3, 3, lambda i, j, k: i*0+10, 0.05)
+	eng.initRender([640, 480])
 	#eng.moveObject(1,5,5,5, True)
-	for i in xrange(412):
-		eng.iterate(0.0001)
+	for i in xrange(10):
+		eng.iterate(1)
+	eng.render()
+	raw_input("Press enter")
