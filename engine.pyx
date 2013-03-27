@@ -5,10 +5,13 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from qmath import quaternion
 
+def normVec(vec):
+	return vec/sum(vec**2)
+
 class Engine:
 	def __init__(self, x, y, z, temp, k=0.05, spacing = 0.1):
 		self.calcspace = fromfunction(temp, (x,y,z), dtype=float)
-		self.middlepoint = self.calcspace[x/2][y/2][z/2]
+		self.middlePoint = self.calcspace[x/2][y/2][z/2]
 		self.prev = self.calcspace.copy()
 		self.objects = zeros((x,y,z), dtype=int)
 		self.nextObj = 1
@@ -83,7 +86,8 @@ class Engine:
 	def initRender(self, size):
 		self.size = size
 		pygame.init()
-		screen = pygame.display.set_mode(size, HWSURFACE | OPENGL | DOUBLEBUF)
+		self.font = pygame.font.SysFont("Bitstream Vera Sans Mono", 14)
+		self.screen = pygame.display.set_mode(size, HWSURFACE | OPENGL | DOUBLEBUF)
 		glViewport(0, 0, size[0], size[1])
 		glShadeModel(GL_SMOOTH)
 		glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
@@ -97,14 +101,6 @@ class Engine:
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
 
-		glBegin(GL_QUADS)
-		glColor(1, 0, 0, 1)
-		glVertex2f(-1,-1)
-		glVertex2f(-1,-0.94)
-		glColor(0, 0, 1, 1)
-		glVertex2f(-0.9,-0.94)
-		glVertex2f(-0.9,-1)
-		glEnd()
 		gluPerspective(60.0, float(self.viewport[2])/self.viewport[3], 0.1, 1000)
 
 		glMatrixMode(GL_MODELVIEW)
@@ -118,7 +114,6 @@ class Engine:
 			for j in xrange(3):
 				rotMat[i,j] = temp[i,j]
 		rotMat[3,3] = 1
-		print rotMat
 		glMultMatrixf(rotMat)
 
 		# Draw x-axis line.
@@ -154,7 +149,7 @@ class Engine:
 		sz = 1./lz
 		maxTemp = max(self.calcspace)
 		minTemp = min(self.calcspace)
-		mid = self.middlepoint
+		mid = self.middlePoint
 		if (abs(maxTemp-mid) < 1 ):
 			maxTemp = mid + 1
 		if (abs(minTemp-mid) < 1):
@@ -170,11 +165,68 @@ class Engine:
 						 (calc[x][y][z] < mid)*((calc[x][y][z]-mid)/(minTemp-mid)) 
 					glColor(colFac, 0, 1-colFac, 0.5)
 					glBegin(GL_QUADS)
+					#top
+					glVertex3f(x*sx,y*sy,(z+1)*sz);
+					glVertex3f((x+1)*sx,y*sy,(z+1)*sz);
+					glVertex3f((x+1)*sx,(y+1)*sy,(z+1)*sz);
+					glVertex3f(x*sx,(y+1)*sy,(z+1)*sz);
+					#bottom
 					glVertex3f(x*sx,y*sy,z*sz);
 					glVertex3f((x+1)*sx,y*sy,z*sz);
 					glVertex3f((x+1)*sx,(y+1)*sy,z*sz);
 					glVertex3f(x*sx,(y+1)*sy,z*sz);
+					#side 1
+					glVertex3f(x*sx,y*sy,z*sz);
+					glVertex3f(x*sx,y*sy,(z+1)*sz);
+					glVertex3f(x*sx,(y+1)*sy,(z+1)*sz);
+					glVertex3f(x*sx,(y+1)*sy,z*sz);
+					#side 2
+					glVertex3f((x+1)*sx,y*sy,z*sz);
+					glVertex3f((x+1)*sx,y*sy,(z+1)*sz);
+					glVertex3f((x+1)*sx,(y+1)*sy,(z+1)*sz);
+					glVertex3f((x+1)*sx,(y+1)*sy,z*sz);
+					#side 3
+					glVertex3f((x+1)*sx,(y+1)*sy,z*sz);
+					glVertex3f((x+1)*sx,(y+1)*sy,(z+1)*sz);
+					glVertex3f(x*sx,(y+1)*sy,(z+1)*sz);
+					glVertex3f(x*sx,(y+1)*sy,z*sz);
+					#side 4
+					glVertex3f((x+1)*sx,y*sy,z*sz);
+					glVertex3f((x+1)*sx,y*sy,(z+1)*sz);
+					glVertex3f(x*sx,y*sy,(z+1)*sz);
+					glVertex3f(x*sx,y*sy,z*sz);
 					glEnd()
+		glMatrixMode(GL_MODELVIEW)
+		glLoadIdentity( )
+		glMatrixMode(GL_PROJECTION)
+		glLoadIdentity()
+
+		glBegin(GL_QUADS)
+		glColor(0, 0, 1, 1)
+		glVertex2f(-0.2,-1)
+		glVertex2f(-0.2,-0.94)
+		glColor(1, 0, 0, 1)
+		glVertex2f(0.2,-0.94)
+		glVertex2f(0.2,-1)
+		glEnd()
+		# Position camera to look at the world origin.
+
+		glRasterPos2f(-0.4, -1);
+		minText = self.font.render("%3f" % (minTemp), 1, (255, 255, 255), (0,0,0))
+		minData = pygame.image.tostring(minText, 'RGBA', 1)
+		minSize = minText.get_size()
+		glDrawPixels(minSize[0], minSize[1], GL_RGBA, GL_UNSIGNED_BYTE, minData)
+		glRasterPos2f(0.2, -1);
+		maxText = self.font.render("%3f" % (maxTemp), 1, (255, 255, 255), (0,0,0))
+		maxData = pygame.image.tostring(maxText, 'RGBA', 1)
+		maxSize = maxText.get_size()
+		glDrawPixels(maxSize[0], maxSize[1], GL_RGBA, GL_UNSIGNED_BYTE, maxData)
+
+		glRasterPos2f(-0.1, -0.94);
+		midText = self.font.render("%3f" % (self.middlePoint), 1, (255, 255, 255), (0,0,0))
+		midData = pygame.image.tostring(midText, 'RGBA', 1)
+		midSize = midText.get_size()
+		glDrawPixels(midSize[0], midSize[1], GL_RGBA, GL_UNSIGNED_BYTE, midData)
 
 		glFlush()
 		pygame.display.flip()
@@ -182,13 +234,13 @@ class Engine:
 	def run(self, size):
 		self.rot = quaternion(array([[1.,0.,0.], [0.,1.,0.], [0.,0.,1.]]))
 		self.initRender(size)
-		framerate = 60
+		framerate = 20
 		pygame.time.set_timer(pygame.VIDEOEXPOSE, 1000 / framerate)
 		while True:
 			self.rot = self.rot.unitary()
-			print self.rot
 			event = pygame.event.wait()
 			if event.type == pygame.VIDEOEXPOSE:
+				eng.iterate(0.01)
 				self.render()
 			elif event.type == pygame.KEYDOWN and event.key == pygame.K_q:
 				break;
@@ -196,8 +248,11 @@ class Engine:
 				if event.buttons[0] == 1:
 					v1 = self.getVector(self.oldPos)
 					v2 = self.getVector(event.pos)
+					cr = cross(v2, v1)
+					d = dot(v1, v2)
+					print arccos(d)
+					print cr
 				self.oldPos = event.pos
-
 
 			else:
 				pass
@@ -205,9 +260,9 @@ class Engine:
 
 		
 	def getVector(self, pos):
-		xm = x/(float(self.size[0]))-0.5
-		ym = 0.5-y/(float(self.size[1]))
-		r = sqrt(xm*xm + ym*ym)
+		xm = pos[0]/(float(self.size[0]))-0.5
+		ym = 0.5-pos[1]/(float(self.size[1]))
+		r = (xm*xm + ym*ym)**0.5
 		if r >= 0.5:
 			xm /= r
 			ym /= r
@@ -215,15 +270,13 @@ class Engine:
 		else:
 			xm *= 2
 			ym *= 2
-			lComp = sqrt(1-4*r*r)
-		return numpy.array([xm, ym, lComp])
+			lComp = (1-4*r*r)**0.5
+		return normVec(array([xm, ym, lComp]))
 		#return glm::normalize(glm::vec3(xm, ym, lComp));
 
 if __name__ == '__main__':
 	eng = Engine(10,10,10,lambda i, j, k: i*0+3, 0.05, 0.5)
 	eng.insertObject(3, 3, 3, 3, 3, 3, lambda i, j, k: i*0+10, 0.05)
 	#eng.moveObject(1,5,5,5, True)
-	for i in xrange(10):
-		eng.iterate(1)
 	eng.run([640, 480])
 
