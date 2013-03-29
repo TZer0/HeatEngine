@@ -18,6 +18,7 @@ class Engine:
 		self.startTemp = temp(0,0,0)
 		self.kVals = [[k]]
 		self.spacing = spacing
+		self.Time = 0.;
 		
 
 	def insertObject(self, x, y, z, xsize, ysize, zsize, temp, kv = 0.3):
@@ -56,6 +57,7 @@ class Engine:
 					self.calcspace[xd+i][yd+j][zd+k] = dupCalc[i][j][k]
 
 	def iterate(self, dt):
+		self.Time += dt
 		pre = dt/self.spacing**2
 		ys = len(self.calcspace[0])
 		zs = len(self.calcspace[0][0])
@@ -210,24 +212,15 @@ class Engine:
 		glVertex2f(0.2,-1)
 		glEnd()
 		# Position camera to look at the world origin.
-
-		glRasterPos2f(-0.4, -1);
-		minText = self.font.render("%3f" % (minTemp), 1, (255, 255, 255), (0,0,0))
-		minData = pygame.image.tostring(minText, 'RGBA', 1)
-		minSize = minText.get_size()
-		glDrawPixels(minSize[0], minSize[1], GL_RGBA, GL_UNSIGNED_BYTE, minData)
-		glRasterPos2f(0.2, -1);
-		maxText = self.font.render("%3f" % (maxTemp), 1, (255, 255, 255), (0,0,0))
-		maxData = pygame.image.tostring(maxText, 'RGBA', 1)
-		maxSize = maxText.get_size()
-		glDrawPixels(maxSize[0], maxSize[1], GL_RGBA, GL_UNSIGNED_BYTE, maxData)
-
-		glRasterPos2f(-0.1, -0.94);
-		midText = self.font.render("%3f" % (self.middlePoint), 1, (255, 255, 255), (0,0,0))
-		midData = pygame.image.tostring(midText, 'RGBA', 1)
-		midSize = midText.get_size()
-		glDrawPixels(midSize[0], midSize[1], GL_RGBA, GL_UNSIGNED_BYTE, midData)
-
+		for dat in ((-0.4, -1., "%3f", minTemp), 
+				(0.2 , -1., "%3f", maxTemp),
+				(-0.1, -0.94, "%3f", self.middlePoint),
+				(-1, 0.94, "T: %3f", self.Time)):
+			glRasterPos2f(dat[0], dat[1]);
+			minText = self.font.render(dat[2] % (dat[3]), 1, (255, 255, 255), (0,0,0))
+			minData = pygame.image.tostring(minText, 'RGBA', 1)
+			minSize = minText.get_size()
+			glDrawPixels(minSize[0], minSize[1], GL_RGBA, GL_UNSIGNED_BYTE, minData)
 		glFlush()
 		pygame.display.flip()
 		glLoadIdentity( )
