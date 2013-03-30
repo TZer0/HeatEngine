@@ -3,10 +3,9 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from qmath import quaternion
 
 def normVec(vec):
-	return vec/sum(vec**2)
+	return vec/(sum(vec**2))**0.5
 
 class Engine:
 	def __init__(self, x, y, z, temp, k=0.05, spacing = 0.1):
@@ -95,6 +94,11 @@ class Engine:
 		glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
 		self.viewport = glGetIntegerv( GL_VIEWPORT )
 		glClearColor( 0.5, 0.5, 0.5, 1 )
+		glMatrixMode(GL_MODELVIEW)
+		glLoadIdentity( )
+
+		# Position camera to look at the world origin.
+		gluLookAt(1, 1, 1, 0.5, 0.5, 0.5, 0, 0, 1 )
 	def render(self):
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT )
 		glEnable(GL_BLEND)
@@ -105,18 +109,6 @@ class Engine:
 
 		gluPerspective(60.0, float(self.viewport[2])/self.viewport[3], 0.1, 1000)
 
-		glMatrixMode(GL_MODELVIEW)
-		glLoadIdentity( )
-
-		# Position camera to look at the world origin.
-		gluLookAt( 1, 1, 1, 0, 0, 0, 0, 0, 1 )
-		temp = self.rot.QuaternionToRotation()
-		rotMat = zeros((4,4), dtype=float)
-		for i in xrange(3):
-			for j in xrange(3):
-				rotMat[i,j] = temp[i,j]
-		rotMat[3,3] = 1
-		glMultMatrixf(rotMat)
 
 		# Draw x-axis line.
 		glColor3f( 1, 0, 0 )
@@ -198,9 +190,10 @@ class Engine:
 					glVertex3f(x*sx,y*sy,(z+1)*sz);
 					glVertex3f(x*sx,y*sy,z*sz);
 					glEnd()
-		glMatrixMode(GL_MODELVIEW)
-		glLoadIdentity( )
 		glMatrixMode(GL_PROJECTION)
+		glLoadIdentity()
+		glMatrixMode(GL_MODELVIEW)
+		glPushMatrix()
 		glLoadIdentity()
 
 		glBegin(GL_QUADS)
@@ -223,14 +216,13 @@ class Engine:
 			glDrawPixels(minSize[0], minSize[1], GL_RGBA, GL_UNSIGNED_BYTE, minData)
 		glFlush()
 		pygame.display.flip()
-		glLoadIdentity( )
+		glPopMatrix()
+
 	def run(self, size):
-		self.rot = quaternion(array([[1.,0.,0.], [0.,1.,0.], [0.,0.,1.]]))
 		self.initRender(size)
 		framerate = 20
 		pygame.time.set_timer(pygame.VIDEOEXPOSE, 1000 / framerate)
 		while True:
-			self.rot = self.rot.unitary()
 			event = pygame.event.wait()
 			if event.type == pygame.VIDEOEXPOSE:
 				eng.iterate(0.01)
@@ -241,10 +233,12 @@ class Engine:
 				if event.buttons[0] == 1:
 					v1 = self.getVector(self.oldPos)
 					v2 = self.getVector(event.pos)
-					cr = cross(v2, v1)
+					cr = normVec(cross(v2, v1))
+					q = array([[cr[0], 0.,0.], [0., cr[1], 0.], [0.,0., cr[2]]])
 					d = dot(v1, v2)
-					print arccos(d)
-					print cr
+					glRotatef(1, cr[0], cr[1], cr[2])
+					#print arccos(d)
+					#print cr
 				self.oldPos = event.pos
 
 			else:
