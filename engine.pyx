@@ -138,9 +138,9 @@ class Engine:
 		lz = len(self.objects[0][0])
 		ry = xrange(len(self.objects[0]))
 		rz = xrange(len(self.objects[0][0]))
-		sx = 1./lx
-		sy = 1./ly
-		sz = 1./lz
+		sx = 2./lx
+		sy = 2./ly
+		sz = 2./lz
 		maxTemp = max(self.calcspace)
 		minTemp = min(self.calcspace)
 		mid = self.middlePoint
@@ -158,37 +158,40 @@ class Engine:
 					colFac = (calc[x][y][z] >= mid)*((calc[x][y][z]-mid)/(maxTemp-mid)) +\
 						 (calc[x][y][z] < mid)*((calc[x][y][z]-mid)/(minTemp-mid)) 
 					glColor(colFac, 0, 1-colFac, 0.5)
+					px = x*sx-0.5
+					py = y*sy-0.5
+					pz = z*sz-0.5
 					glBegin(GL_QUADS)
 					#top
-					glVertex3f(x*sx,y*sy,(z+1)*sz);
-					glVertex3f((x+1)*sx,y*sy,(z+1)*sz);
-					glVertex3f((x+1)*sx,(y+1)*sy,(z+1)*sz);
-					glVertex3f(x*sx,(y+1)*sy,(z+1)*sz);
+					glVertex3f(px,py,pz+sz);
+					glVertex3f(px+sx,py,pz+sz);
+					glVertex3f(px+sx,py+sy,pz+sz);
+					glVertex3f(px,py+sy,pz+sz);
 					#bottom
-					glVertex3f(x*sx,y*sy,z*sz);
-					glVertex3f((x+1)*sx,y*sy,z*sz);
-					glVertex3f((x+1)*sx,(y+1)*sy,z*sz);
-					glVertex3f(x*sx,(y+1)*sy,z*sz);
+					glVertex3f(px,py,pz);
+					glVertex3f(px+sx,py,pz);
+					glVertex3f(px+sx,py+sy,pz);
+					glVertex3f(px,py+sy,pz);
 					#side 1
-					glVertex3f(x*sx,y*sy,z*sz);
-					glVertex3f(x*sx,y*sy,(z+1)*sz);
-					glVertex3f(x*sx,(y+1)*sy,(z+1)*sz);
-					glVertex3f(x*sx,(y+1)*sy,z*sz);
+					glVertex3f(px,py,pz);
+					glVertex3f(px,py,pz+sz);
+					glVertex3f(px,py+sy,pz+sz);
+					glVertex3f(px,py+sy,pz);
 					#side 2
-					glVertex3f((x+1)*sx,y*sy,z*sz);
-					glVertex3f((x+1)*sx,y*sy,(z+1)*sz);
-					glVertex3f((x+1)*sx,(y+1)*sy,(z+1)*sz);
-					glVertex3f((x+1)*sx,(y+1)*sy,z*sz);
+					glVertex3f(px+sx,py,pz);
+					glVertex3f(px+sx,py,pz+sz);
+					glVertex3f(px+sx,py+sy,pz+sz);
+					glVertex3f(px+sx,py+sy,pz);
 					#side 3
-					glVertex3f((x+1)*sx,(y+1)*sy,z*sz);
-					glVertex3f((x+1)*sx,(y+1)*sy,(z+1)*sz);
-					glVertex3f(x*sx,(y+1)*sy,(z+1)*sz);
-					glVertex3f(x*sx,(y+1)*sy,z*sz);
+					glVertex3f(px+sx,py+sy,pz);
+					glVertex3f(px+sx,py+sy,pz+sz);
+					glVertex3f(px,py+sy,pz+sz);
+					glVertex3f(px,py+sy,pz);
 					#side 4
-					glVertex3f((x+1)*sx,y*sy,z*sz);
-					glVertex3f((x+1)*sx,y*sy,(z+1)*sz);
-					glVertex3f(x*sx,y*sy,(z+1)*sz);
-					glVertex3f(x*sx,y*sy,z*sz);
+					glVertex3f(px+sx,py,pz);
+					glVertex3f(px+sx,py,pz+sz);
+					glVertex3f(px,py,pz+sz);
+					glVertex3f(px,py,pz);
 					glEnd()
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
@@ -218,6 +221,19 @@ class Engine:
 		pygame.display.flip()
 		glPopMatrix()
 
+	def heatPoint(self, pos):
+		glMatrixMode(GL_PROJECTION)
+		glLoadIdentity()
+
+		gluPerspective(60.0, float(self.viewport[2])/self.viewport[3], 0.1, 1000)
+		mat = glGetDoublev(GL_PROJECTION_MATRIX)
+		glLoadIdentity()
+		for i in xrange(300):
+			worldPos = gluUnProject(pos[0], pos[1], -i/100.)
+			
+		
+		glMatrixMode(GL_MODELVIEW)
+
 	def run(self, size):
 		self.initRender(size)
 		framerate = 20
@@ -229,8 +245,11 @@ class Engine:
 				self.render()
 			elif event.type == pygame.KEYDOWN and event.key == pygame.K_q:
 				break;
+			elif event.type == pygame.MOUSEBUTTONDOWN:
+				if event.button == 1:
+					self.heatPoint(event.pos)
 			elif event.type == pygame.MOUSEMOTION:
-				if event.buttons[0] == 1:
+				if event.buttons[2] == 1:
 					v1 = self.getVector(self.oldPos)
 					v2 = self.getVector(event.pos)
 					cr = normVec(cross(v2, v1))
@@ -244,7 +263,6 @@ class Engine:
 			else:
 				pass
 				#print event
-
 		
 	def getVector(self, pos):
 		xm = pos[0]/(float(self.size[0]))-0.5
